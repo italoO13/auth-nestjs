@@ -1,0 +1,32 @@
+version: "3"
+services:
+  auth:
+    container_name: "auth"
+    build: ./auth
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./auth:/auth
+    depends_on:
+      - db
+    networks:
+      - app
+
+  db:
+    image: mysql
+    container_name: "db"
+    environment:
+      MYSQL_DATABASE: auth
+      MYSQL_ROOT_PASSWORD: pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - database:/var/lib/mysql
+    networks:
+      - app
+
+networks:
+  app:
+
+volumes:
+  database:
