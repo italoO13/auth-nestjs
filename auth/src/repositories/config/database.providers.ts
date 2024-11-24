@@ -1,22 +1,15 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
-import { Provider } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import * as dotenv from 'dotenv';
 
-export const provideTypeOrm: Provider = {
-  provide: 'DATA_PROVIDE',
-  useFactory: async (configService: ConfigService) => {
-    const dataSource = new DataSource({
-      type: configService.get<string>('DB_TYPE', 'mysql'),
-      host: configService.get<string>('DB_HOST', 'db'),
-      port: configService.get<number>('DB_PORT', 3306),
-      username: configService.get<string>('DB_USERNAME', 'root'),
-      password: configService.get<string>('DB_PASSWORD', 'pass'),
-      database: configService.get<string>('DB_DATABASE', 'auth'),
-      entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-      synchronize: true,
-    } as DataSourceOptions);
+dotenv.config();
 
-    return dataSource.initialize();
-  },
-  inject: [ConfigService],
+export const provideDB: TypeOrmModuleOptions = {
+  type: 'mysql',
+  host: process.env.DB_HOST,
+  port: +process.env.DB_PORT,
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  synchronize: true,
 };
