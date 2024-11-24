@@ -1,11 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import IAuthService from './interfaces/auth-service.inteface';
+import { IUserRepository } from 'src/repositories/user/user.interface';
+import { generatePassword } from 'src/utils/generate-password.utils';
+import { Encrypt } from 'src/utils/encrypt.utils';
+import { ResponseUserDto } from './dto/response-user.dto';
 
 @Injectable()
-export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+export class AuthService implements IAuthService {
+  constructor(
+    @Inject(IUserRepository)
+    private readonly userModel: IUserRepository,
+    private readonly encrypt: Encrypt,
+  ) {}
+
+  private async validateCreateUser(createAuthDto: CreateAuthDto) {
+    const { cpf, email } = createAuthDto;
+    const user = await this.userModel.findByCondition({
+      where: [{ cpf }, { email }],
+    });
+
+    if (user.length) {
+      throw new ConflictException('user_already_exists');
+    }
+  }
+
+  async create(createAuthDto: CreateAuthDto): Promise<ResponseUserDto> {
+    await this.validateCreateUser(createAuthDto);
+    const password = generatePassword(8);
+
+    const newUser = await this.userModel.create({
+      ...createAuthDto,
+      password: await this.encrypt.encryptPassword(password),
+    });
+
+    return new ResponseUserDto(newUser);
   }
 
   findAll() {

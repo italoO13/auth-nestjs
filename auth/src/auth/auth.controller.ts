@@ -6,17 +6,28 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { ApiConflictResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ResponseUserDto } from './dto/response-user.dto';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfull',
+    type: ResponseUserDto,
+  })
+  @ApiConflictResponse({ description: 'user already exists' })
   @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
+  @HttpCode(201)
+  create(@Body() createAuthDto: CreateAuthDto): Promise<ResponseUserDto> {
     return this.authService.create(createAuthDto);
   }
 
