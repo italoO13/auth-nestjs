@@ -17,6 +17,7 @@ import { UserEntity } from 'src/repositories/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { ResponseLoginDto } from './dto/response-login.dto';
 import { Roles } from 'src/repositories/types/roles.type';
+import { ResponseFilterDto } from './dto/response-filter.dto';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -86,7 +87,7 @@ export class AuthService implements IAuthService {
     return new ResponseLoginDto(token, new ResponseUserDto(user));
   }
 
-  async findAll(filter): Promise<ResponseUserDto[]> {
+  async findAll(filter: ResponseFilterDto): Promise<ResponseUserDto[]> {
     const users = await this.userModel.findAll(filter);
     return users.map((user) => new ResponseUserDto(user));
   }
@@ -124,7 +125,13 @@ export class AuthService implements IAuthService {
     return new ResponseUserDto(updatedUser);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  async remove(id: number): Promise<void> {
+    await this.findOne(id);
+    await this.userModel.deleteVirtual(id);
+  }
+
+  async me(payload: PayloadJwtDto): Promise<ResponseUserDto> {
+    const user = await this.findOne(payload.sub);
+    return user;
   }
 }

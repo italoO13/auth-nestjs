@@ -9,6 +9,8 @@ import {
   HttpCode,
   Query,
   Request,
+  UseGuards,
+  Inject,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -24,11 +26,18 @@ import { ResponseUserDto } from './dto/response-user.dto';
 import { LoginDto, PayloadJwtDto } from './dto/login.dto';
 import { ResponseLoginDto } from './dto/response-login.dto';
 import { Public } from './decorators/public-auth.decorator';
+import { ResponseFilterDto } from './dto/response-filter.dto';
+import { AuthGuard } from './guards/jwt.guard';
+import IAuthService from './interfaces/auth-service.inteface';
 
 @ApiTags('Auth')
+@UseGuards(AuthGuard)
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    @Inject(AuthService)
+    private readonly authService: IAuthService,
+  ) {}
 
   @ApiResponse({
     status: 201,
@@ -62,7 +71,9 @@ export class AuthController {
   })
   @HttpCode(200)
   @Get()
-  async findAll(@Query() filters): Promise<ResponseUserDto[]> {
+  async findAll(
+    @Query() filters: ResponseFilterDto,
+  ): Promise<ResponseUserDto[]> {
     return await this.authService.findAll(filters);
   }
 
@@ -94,8 +105,26 @@ export class AuthController {
     return this.authService.update(+id, updateAuthDto, user as PayloadJwtDto);
   }
 
+  @ApiResponse({
+    status: 200,
+    description: 'Delete user by id',
+  })
+  @ApiNotFoundResponse({ description: 'user_not_found' })
+  @HttpCode(200)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.authService.remove(+id);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Return info user me',
+    type: ResponseUserDto,
+  })
+  @ApiNotFoundResponse({ description: 'user_not_found' })
+  @HttpCode(200)
+  @Post('me')
+  async me(@Request() { user }): Promise<ResponseUserDto> {
+    return await this.authService.me(user as PayloadJwtDto);
   }
 }
