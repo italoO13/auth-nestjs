@@ -6,9 +6,24 @@ import UserRepository from 'src/repositories/user/user.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from 'src/repositories/entities/user.entity';
 import { Encrypt } from 'src/utils/encrypt.utils';
+import { JwtModule, JwtModuleAsyncOptions } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+const provideJwt = JwtModule.registerAsync({
+  imports: [ConfigModule],
+  useFactory: async (config: ConfigService) => {
+    return {
+      global: true,
+      secret: config.get('JWT_SECRET'),
+      signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') },
+    } as JwtModuleAsyncOptions;
+  },
+  inject: [ConfigService],
+});
+
 @Module({
   controllers: [AuthController],
-  imports: [TypeOrmModule.forFeature([UserEntity])],
+  imports: [TypeOrmModule.forFeature([UserEntity]), provideJwt],
   providers: [
     {
       provide: IUserRepository,
@@ -17,5 +32,6 @@ import { Encrypt } from 'src/utils/encrypt.utils';
     Encrypt,
     AuthService,
   ],
+  exports: [provideJwt],
 })
 export class AuthModule {}
