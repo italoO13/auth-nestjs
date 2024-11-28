@@ -29,6 +29,7 @@ const provideJwt = JwtModule.registerAsync({
       provide: IUserRepository,
       useClass: UserRepository,
     },
+    AuthService,
     Encrypt,
     AuthService,
   ],
