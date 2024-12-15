@@ -18,6 +18,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ResponseLoginDto } from './dto/response-login.dto';
 import { Roles } from 'src/repositories/types/roles.type';
 import { ResponseFilterDto } from './dto/response-filter.dto';
+import { NotificationProducerService } from 'src/notification-producer/notification-producer.service';
+import { NotificationPattern } from 'src/notification-producer/types/notification.type';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -26,6 +28,7 @@ export class AuthService implements IAuthService {
     private readonly userModel: IUserRepository,
     private readonly encrypt: Encrypt,
     private readonly jwtService: JwtService,
+    private readonly notificationProducerService: NotificationProducerService,
   ) {}
 
   private async validateCreateUser(createAuthDto: CreateAuthDto) {
@@ -39,14 +42,33 @@ export class AuthService implements IAuthService {
     }
   }
 
+  private async sendAuthPassword(newUser: UserEntity, password: string) {
+    const data = {
+      email: newUser.email,
+      subject: 'Welcome to our system',
+      content: {
+        email: newUser.email,
+        password,
+      },
+      template: 1,
+    };
+
+    await this.notificationProducerService.send(
+      NotificationPattern.sendEmail,
+      data,
+    );
+  }
+
   async create(createAuthDto: CreateAuthDto): Promise<ResponseUserDto> {
     await this.validateCreateUser(createAuthDto);
     const password = generatePassword(8);
-    console.log(password);
+
     const newUser = await this.userModel.create({
       ...createAuthDto,
       password: await this.encrypt.encryptPassword(password),
     });
+
+    this.sendAuthPassword(newUser, password);
 
     return new ResponseUserDto(newUser);
   }

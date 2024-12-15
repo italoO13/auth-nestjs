@@ -8,6 +8,7 @@ import { UserEntity } from 'src/repositories/entities/user.entity';
 import { Encrypt } from 'src/utils/encrypt.utils';
 import { JwtModule, JwtModuleAsyncOptions } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { NotificationProducerModule } from 'src/notification-producer/notification-producer.module';
 
 const provideJwt = JwtModule.registerAsync({
   imports: [ConfigModule],
@@ -23,7 +24,11 @@ const provideJwt = JwtModule.registerAsync({
 
 @Module({
   controllers: [AuthController],
-  imports: [TypeOrmModule.forFeature([UserEntity]), provideJwt],
+  imports: [
+    TypeOrmModule.forFeature([UserEntity]),
+    provideJwt,
+    NotificationProducerModule,
+  ],
   providers: [
     {
       provide: IUserRepository,
